@@ -73,24 +73,25 @@ variable breadcrumbcounter
 ;
 
 : printcandidate ( -- )
+    cr ." candidates:"
     candidatecounter @ 0 ?do
-    i cells candidatestack + ?
+        i cells candidatestack + @
+        unpack
+        cr ." [ " swap rot 2 = if ." far " else ." near " endif . . ." ]"
     loop
 ;
 
 : printbreadcrumb ( -- )
+    cr ." Solution Found " cr
     breadcrumbcounter @ 0 ?do
     i cells breadcrumbstack + ?
     loop
 ;
 
-: startstate ( -- near m c ) 
-    1 2 3
-;
 
 : isgoal ( near m c -- bool ) 
     \ compare with 2 0 0
-    pack
+    \ pack
     200 =
 ;
 
@@ -127,6 +128,7 @@ variable breadcrumbcounter
 
 : addcandidate ( near m c -- ) 
     3dup
+
     isvalid  ( -1 or 0 )
 
     if 
@@ -134,18 +136,58 @@ variable breadcrumbcounter
         isused ( -1 or 0 )
 
         if 
-            ." repeat   [ " 
+            dup unpack
+            cr ." repeat   [ " 
             swap rot 2 = if ." far " else ." near " endif . . ." ]"
             exit
         else
-            addused
+            dup unpack
+            cr ." fresh   [ " 
+            swap rot 2 = if ." far " else ." near " endif . . ." ]"
+            pushcandidate
         endif
 
     else 
-        ." invalid   [ " 
+        cr ." invalid   [ " 
         swap rot 2 = if ." far " else ." near " endif . . ." ]"
         exit 
     endif
 ;
 
+: startstate ( -- near m c ) 
+    1 3 3
+    pushcandidate
+;
+
+: successors ( near m c -- ) 
+    \ pack
+    dup 200 >= if 100 - else 100 + endif
+    dup 1 - ( - 1 )
+    swap dup 2 - ( - 2 )
+    swap 11 - ( - 11 )
+    swap dup 10 - ( - 10 )
+    swap dup 20 - ( - 20 )
+    5
+;
+
+: search ( -- ) 
+    printcandidate 
+    popcandidate
+    dup pushbreadcrumb
+    dup isgoal if printbreadcrumb exit
+           else
+               successors
+               0 ?do
+                   unpack
+                   addcandidate
+               loop
+           endif
+    recurse
+    popbreadcrumb
+;
+
+: start ( -- ) 
+    startstate
+    search
+;
 
