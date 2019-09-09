@@ -73,7 +73,7 @@ variable breadcrumbcounter
 ;
 
 : printcandidate ( -- )
-    cr ." candidates:"
+    cr cr ." candidates:"
     candidatecounter @ 0 ?do
         i cells candidatestack + @
         unpack
@@ -82,10 +82,13 @@ variable breadcrumbcounter
 ;
 
 : printbreadcrumb ( -- )
-    cr ." Solution Found " cr
+    cr cr ." Solution Found " cr
     breadcrumbcounter @ 0 ?do
-    i cells breadcrumbstack + ?
+        i cells breadcrumbstack + @
+        unpack
+        cr ." [ " swap rot 2 = if ." far " else ." near " endif . . ." ]"
     loop
+    cr
 ;
 
 
@@ -139,11 +142,14 @@ variable breadcrumbcounter
             dup unpack
             cr ." repeat   [ " 
             swap rot 2 = if ." far " else ." near " endif . . ." ]"
+            drop
             exit
         else
-            dup unpack
+            dup dup 
+            unpack
             cr ." fresh   [ " 
             swap rot 2 = if ." far " else ." near " endif . . ." ]"
+            addused
             pushcandidate
         endif
 
@@ -156,17 +162,27 @@ variable breadcrumbcounter
 
 : startstate ( -- near m c ) 
     1 3 3
+    pack
+    dup
+    addused
     pushcandidate
 ;
 
 : successors ( near m c -- ) 
     \ pack
-    dup 200 >= if 100 - else 100 + endif
-    dup 1 - ( - 1 )
-    swap dup 2 - ( - 2 )
-    swap 11 - ( - 11 )
-    swap dup 10 - ( - 10 )
-    swap dup 20 - ( - 20 )
+    dup 200 >= if 100 - 
+        dup 20 +            \ - 20 
+        swap dup 10 +       \ - 10 
+        swap dup 11 +       \ - 11 
+        swap dup 2 +        \ - 2 
+        swap 1 +            \ - 1
+    else 100 + 
+        dup 20 -            \ - 20 
+        swap dup 10 -       \ - 10 
+        swap dup 11 -       \ - 11 
+        swap dup 2 -        \ - 2 
+        swap 1 -            \ - 1
+    endif
     5
 ;
 
@@ -187,6 +203,9 @@ variable breadcrumbcounter
 ;
 
 : start ( -- ) 
+    candidatestack 20 cells erase
+    usedstack 20 cells erase
+    breadcrumbstack 20 cells erase
     startstate
     search
 ;
